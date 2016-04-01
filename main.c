@@ -9,7 +9,6 @@
 char validChars[] = "+-<>[].,"; 
 char compressChars[] = "+-<>";
 
-
 unsigned char *mem; // must be global so asm can see it...
 
 int getFileLen(FILE *fp) {
@@ -30,50 +29,50 @@ void jit(char *prog, int *meta, int *metaB, int progLen) {
 	static char addMem[] = {0x41, 0x8a, 0x07, 0x04, 'X', 0x41, 0x88, 0x07};
 	/*
 	41 8a 07             	mov    (%r15),%al
-  04 X                	add    X,%al
-  41 88 07             	mov    %al,(%r15)
+	04 X                 	add    X,%al
+	41 88 07             	mov    %al,(%r15)
 	*/
 	static char setMem[] = {0xb0, 'X', 0x41, 0x88, 0x07};
 	/*
-	b0 X                	mov    $X,%al  // two stages may be unnecessary
-  41 88 07             	mov    %al,(%r15)
+	b0 X                 	mov    $X,%al  // two stages may be unnecessary
+	41 88 07             	mov    %al,(%r15)
 	*/
 	static char mulMemOffset[] = {0x41, 0x8a, 0x07, 0xb3, 'X', 0xf6, 0xeb, 0x4d, 0x89, 0xfe, 0x49, 0x83, 0xc6, 'Y', 0x41, 0x8a, 0x1e, 0x00, 0xc3, 0x41, 0x88, 0x1e}; // TODO: simplify this
 	/*
 	41 8a 07             	mov    (%r15),%al
-  b3 X                	mov    X,%bl
-  f6 eb                	imul   %bl
-  4d 89 fe             	mov    %r15,%r14
-  49 83 c6 Y          	add    Y,%r14
-  41 8a 1e             	mov    (%r14),%bl
-  00 c3                	add    %al,%bl
-  41 88 1e             	mov    %bl,(%r14)
-  */
+	b3 X                 	mov    X,%bl
+	f6 eb                	imul   %bl
+	4d 89 fe             	mov    %r15,%r14
+	49 83 c6 Y           	add    Y,%r14
+	41 8a 1e             	mov    (%r14),%bl
+	00 c3                	add    %al,%bl
+	41 88 1e             	mov    %bl,(%r14)
+	*/
 	static char addPtr[] = {0x49, 0x81, 0xc7, 'X', 'X', 'X', 'X'}; // TODO this can be optimised when XXXX fits in a single byte (most of the time)
 	/*
-	49 81 c7 X X X X 	    add    XXXX,%r15
+	49 81 c7 X X X X     	add    XXXX,%r15
 	*/
 	static char printR15[] = {0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00, 0x48, 0x89, 0xc7, 0x48, 0x89, 0xc2, 0x4c, 0x89, 0xfe, 0x0f, 0x05};
 	/*
 	48 c7 c0 01 00 00 00 	mov    $0x1,%rax // TODO: maybe this could be optimised
-  48 89 c7             	mov    %rax,%rdi
-  48 89 c2             	mov    %rax,%rdx
-  4c 89 fe             	mov    %r15,%rsi
-  0f 05                	syscall 
-  */
-  static char openBrace[] = {0x41, 0x8a, 0x07, 0x84, 0xc0, 0x0f, 0x84, 'X', 'X', 'X', 'X'}; // TODO this can be optimised when XXXX is small
-  /*
-  41 8a 07             	mov    (%r15),%al
-  84 c0                	test   %al,%al
-  0f 84 X X X X		    	je     XXXX
-  */
-  static char closeBrace[] = {0x41, 0x8a, 0x07, 0x84, 0xc0, 0x0f, 0x85, 'X', 'X', 'X', 'X'}; // TODO this can be optimised when XXXX is small
-  /*
-  41 8a 07             	mov    (%r15),%al
-  84 c0                	test   %al,%al
-  0f 85 X X X X		    	jne    XXXX
-  */
-  static char ret[] = {0xc3};
+	48 89 c7             	mov    %rax,%rdi
+	48 89 c2             	mov    %rax,%rdx
+	4c 89 fe             	mov    %r15,%rsi
+	0f 05                	syscall 
+	*/
+	static char openBrace[] = {0x41, 0x8a, 0x07, 0x84, 0xc0, 0x0f, 0x84, 'X', 'X', 'X', 'X'}; // TODO this can be optimised when XXXX is small
+	/*
+	41 8a 07             	mov    (%r15),%al
+	84 c0                	test   %al,%al
+	0f 84 X X X X        	je     XXXX
+	*/
+	static char closeBrace[] = {0x41, 0x8a, 0x07, 0x84, 0xc0, 0x0f, 0x85, 'X', 'X', 'X', 'X'}; // TODO this can be optimised when XXXX is small
+	/*
+	41 8a 07             	mov    (%r15),%al
+	84 c0                	test   %al,%al
+	0f 85 X X X X        	jne    XXXX
+	*/
+	static char ret[] = {0xc3};
 
 	void *binary = mmap(NULL, 1000000, PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0); // TODO calculate actual length
 	int binPtr = 0;
