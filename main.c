@@ -1,7 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
+
+#if (defined(__x86_64__) || defined(__amd64__) || defined(_M_AMD64)) && \
+     defined(_POSIX_MAPPED_FILES) && ((_POSIX_MAPPED_FILES -0) > 0)
 #include <sys/mman.h>
+#define ENABLE_JIT
+#else
+#warning JIT has been disabled.
+#endif
 
 #define MAX_BRACE_DEPTH 256
 #define MAX_LOOP_MOVES 2048
@@ -25,6 +33,7 @@ int isInStr(char c, char *str) {
 	return 0;
 }
 
+#ifdef ENABLE_JIT
 void jit(char *prog, int *meta, int *metaB, int progLen) {
 	static char addMem[] = {0x41, 0x8a, 0x07, 0x04, 'X', 0x41, 0x88, 0x07};
 	/*
@@ -72,6 +81,21 @@ void jit(char *prog, int *meta, int *metaB, int progLen) {
 	84 c0                	test   %al,%al
 	0f 85 X X X X        	jne    XXXX
 	*/
+	static char readR15[] = {
+		0x48, 0xc7, 0xc0, 0x01, 0x00, 0x00, 0x00,
+		0x48, 0x89, 0xc2,
+		0x48, 0xc7, 0xc0, 0x00, 0x00, 0x00, 0x00,
+		0x48, 0x89, 0xc7,
+		0x4c, 0x89, 0xfe,
+		0x0f, 0x05};
+	/*
+	48 c7 c0 01 00 00 00 	mov    $0x1,%rax // TODO: maybe this could be optimised
+	48 89 c2             	mov    %rax,%rdx
+	48 c7 c0 00 00 00 00 	mov    $0x0,%rax // TODO: maybe this could be optimised
+	48 89 c7             	mov    %rax,%rdi
+	4c 89 fe             	mov    %r15,%rsi
+	0f 05                	syscall 
+	*/
 	static char ret[] = {0xc3};
 
 	void *binary = mmap(NULL, 1000000, PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0); // TODO calculate actual length
@@ -110,6 +134,10 @@ void jit(char *prog, int *meta, int *metaB, int progLen) {
 				memcpy(binary + binPtr, &printR15, sizeof(printR15));
 				binPtr += sizeof(printR15);
 				break;
+			case ',':
+				memcpy(binary + binPtr, &readR15, sizeof(readR15));
+				binPtr += sizeof(readR15);
+				break;
 			case '[':
 				memcpy(binary + binPtr, &openBrace, sizeof(openBrace));
 				binPtr += sizeof(openBrace);
@@ -134,6 +162,7 @@ void jit(char *prog, int *meta, int *metaB, int progLen) {
 	munmap(binary, 1000000);
 	free(mem);
 }
+#endif
 
 void interpret(char *prog, int *meta, int *metaB, int progLen) {
 	
@@ -356,11 +385,12 @@ int main(int argc, char *argv[]) {
 	meta = realloc(meta, progLen * sizeof(int));
 	metaB = realloc(metaB, progLen * sizeof(int));
 	
+#ifdef ENABLE_JIT
 	if (argc == 2) {
 		jit(prog, meta, metaB, progLen);
-	} else {
+	} else
+#endif
 		interpret(prog, meta, metaB, progLen);
-	}
 	
 	free(prog);
 	free(meta);
