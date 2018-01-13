@@ -166,7 +166,7 @@ void jit(char *prog, int *meta, int *metaB, int progLen) {
 
 void interpret(char *prog, int *meta, int *metaB, int progLen) {
 	
-	printf("Interpreting...\n");
+	fprintf(stderr, "Interpreting...\n");
 	
 	int iPtr = 0;
 	int memPtr = 0;
@@ -210,7 +210,7 @@ void interpret(char *prog, int *meta, int *metaB, int progLen) {
 int main(int argc, char *argv[]) {
 
 	if (argc != 2 && argc != 3) {
-		printf("Usage: %s input.b [-interpret]\n", argv[0]);
+		fprintf(stderr, "Usage: %s input.b [-interpret]\n", argv[0]);
 		return 0;
 	}
 	
@@ -357,13 +357,13 @@ int main(int argc, char *argv[]) {
 		if (prog[i] == '[') {
 			braceStack[braceStackPtr++] = i;
 			if (braceStackPtr >= MAX_BRACE_DEPTH) {
-				printf("Error: To many nested braces!\n");
+				fprintf(stderr, "Error: To many nested braces!\n");
 				return 1;
 			}
 		} else if (prog[i] == ']') {
 			braceStackPtr--;
 			if (braceStackPtr < 0) {
-				printf("Error: Too many ']'. Or maybe not enough '['?\n");
+				fprintf(stderr, "Error: Too many ']'. Or maybe not enough '['?\n");
 				return 1;
 			}
 			meta[braceStack[braceStackPtr]] = i;
@@ -372,12 +372,12 @@ int main(int argc, char *argv[]) {
 	}
 	
 	if (braceStackPtr > 0) {
-		printf("Error: Not enough ']'. Or maybe too many '['?\n");
+		fprintf(stderr, "Error: Not enough ']'. Or maybe too many '['?\n");
 		return 1;
 	}
 	
 	//prog[progLen] = 0;
-	//printf("%s\n", prog);
+	//fprintf(stderr, "%s\n", prog);
 	
 	setbuf(stdout, NULL); // disable output buffering
 	
