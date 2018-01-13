@@ -275,7 +275,10 @@ int main(int argc, char *argv[]) {
 			for (int j = openPtr+1; j < i; j++) {
 				switch(tmpProg[j]) {
 					case '+':
-						counts[countPtr+(MAX_LOOP_MOVES/2)] += tmpMeta[j];
+						if (countPtr < -128 || countPtr > 127) /* && is Jit */
+							failed = 1;
+						else
+							counts[countPtr+(MAX_LOOP_MOVES/2)] += tmpMeta[j];
 						break;
 					case '>':
 						countPtr += tmpMeta[j];
@@ -284,7 +287,7 @@ int main(int argc, char *argv[]) {
 						failed = 1;
 				}
 			}
-			if (countPtr == 0 && !failed && abs(counts[MAX_LOOP_MOVES/2]) == 1) {
+			if (countPtr == 0 && !failed && (counts[MAX_LOOP_MOVES/2]) == -1) {
 				ptr = openPtr - (i - ptr);
 				for (int j = -(MAX_LOOP_MOVES/2); j < (MAX_LOOP_MOVES/2); j++) {
 					if(counts[j+(MAX_LOOP_MOVES/2)] != 0 && j != 0) {
@@ -304,6 +307,7 @@ int main(int argc, char *argv[]) {
 				ptr++;
 			}
 			free(counts);
+			openPtr = 0;
 		} else {
 			prog[ptr] = tmpProg[i];
 			meta[ptr] = tmpMeta[i];
