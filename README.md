@@ -10,7 +10,7 @@ Performance is significantly better than a dumb interpreter, but still far from 
 
 ### Issues:
 - Doesn't work properly with some programs (notably hanoi.b).
-- Insufficient bounds checks - a malicious program could overwrite abritrary memory locations.
+- Insufficient bounds checks - a malicious program could overwrite arbitrary memory locations.
 - The code is poorly written (I don't really know C *or* x86 assembly)
 
 ### TODO:
