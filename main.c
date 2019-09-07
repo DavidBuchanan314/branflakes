@@ -157,7 +157,7 @@ void jit(char *prog, int *meta, int *metaB, int progLen) {
 	
 	int (*myFunction)() = binary;
 	mem = calloc(30000, 1);
-	asm("mov mem, %r15"); // r15 stores the memory pointer
+	asm volatile("mov %0, %%r15" : : "a" (mem) : "%r15"); // r15 stores the memory pointer
 	myFunction();
 	munmap(binary, 1000000);
 	free(mem);
